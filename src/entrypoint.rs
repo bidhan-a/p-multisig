@@ -25,5 +25,8 @@ fn process_instruction(
         MultisigInstruction::CreateMultisig => {
             instruction::process_create_multisig(accounts, instruction_data)
         }
+        MultisigInstruction::CreateTransaction => {
+            instruction::process_create_transaction(accounts, instruction_data)
+        }
     }
 }
