@@ -27,8 +27,8 @@ pub fn process_create_transaction(accounts: &[AccountInfo], data: &[u8]) -> Prog
     let multisig_pda = pubkey::create_program_address(
         &[
             MULTISIG_SEED.as_bytes(),
-            transaction_header.seed.as_ref(),
-            &[transaction_header.bump as u8],
+            multisig_header.seed.as_ref(),
+            &[multisig_header.bump as u8],
         ],
         &crate::ID,
     )?;
@@ -40,8 +40,8 @@ pub fn process_create_transaction(accounts: &[AccountInfo], data: &[u8]) -> Prog
     let transaction_pda = pubkey::create_program_address(
         &[
             TRANSACTION_SEED.as_bytes(),
-            multisig_header.seed.as_ref(),
-            &[multisig_header.bump as u8],
+            transaction_header.seed.as_ref(),
+            &[transaction_header.bump as u8],
         ],
         &crate::ID,
     )?;
@@ -61,11 +61,10 @@ pub fn process_create_transaction(accounts: &[AccountInfo], data: &[u8]) -> Prog
                 // If this owner is the transaction creator, check that they have signed.
                 if owner == signer.key() && signer_entry.signed != 255 {
                     return Err(ProgramError::InvalidInstructionData);
-                } else {
-                    // Other owners must not have signed yet (0)
-                    if signer_entry.signed != 0 {
-                        return Err(ProgramError::InvalidInstructionData);
-                    }
+                }
+                // Other owners must not have signed yet (0)
+                else if owner != signer.key() && signer_entry.signed != 0 {
+                    return Err(ProgramError::InvalidInstructionData);
                 }
             }
             None => {
