@@ -77,6 +77,28 @@ impl<'a> Transaction<'a> {
         Ok(())
     }
 
+    /// Returns a mutable reference to transaction signers.
+    pub fn signers(account: &AccountInfo) -> Result<&mut [TransactionSigner], ProgramError> {
+        let data = unsafe { account.borrow_mut_data_unchecked() };
+        let header_size = core::mem::size_of::<TransactionHeader>();
+        let num_accounts: u64;
+        let num_signers: u64;
+        {
+            let header = bytemuck::try_from_bytes::<TransactionHeader>(&data[..header_size])
+                .map_err(|_| ProgramError::InvalidAccountData)?;
+            num_accounts = u64::from_le_bytes(header.num_accounts);
+            num_signers = u64::from_le_bytes(header.num_signers);
+        }
+
+        let accounts_size = num_accounts as usize * core::mem::size_of::<TransactionAccount>();
+        let signers_size = num_signers as usize * core::mem::size_of::<TransactionSigner>();
+        let signers_offset = header_size + accounts_size;
+        let signers_data = &mut data[signers_offset..signers_offset + signers_size];
+        let signers = bytemuck::cast_slice_mut::<u8, TransactionSigner>(signers_data);
+
+        Ok(signers)
+    }
+
     pub fn parse(
         data: &[u8],
     ) -> Result<

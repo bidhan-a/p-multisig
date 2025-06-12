@@ -12,11 +12,11 @@ use crate::{
 };
 
 pub fn process_create_transaction(accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {
-    let [signer, transaction, multisig, _system_program] = accounts else {
+    let [user, transaction, multisig, _system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    if !signer.is_signer() {
+    if !user.is_signer() {
         return Err(ProgramError::MissingRequiredSignature);
     }
 
@@ -49,8 +49,8 @@ pub fn process_create_transaction(accounts: &[AccountInfo], data: &[u8]) -> Prog
         return Err(ProgramError::InvalidAccountData);
     }
 
-    // Check if signer is in the list of multisig owners.
-    if !owners.iter().any(|k| k.eq(signer.key())) {
+    // Check if user is in the list of multisig owners.
+    if !owners.iter().any(|k| k.eq(user.key())) {
         return Err(ProgramError::InvalidInstructionData);
     }
 
@@ -59,11 +59,11 @@ pub fn process_create_transaction(accounts: &[AccountInfo], data: &[u8]) -> Prog
         match signers.iter().find(|s| s.pubkey == *owner) {
             Some(signer_entry) => {
                 // If this owner is the transaction creator, check that they have signed.
-                if owner == signer.key() && signer_entry.signed != 255 {
+                if owner == user.key() && signer_entry.signed != 255 {
                     return Err(ProgramError::InvalidInstructionData);
                 }
                 // Other owners must not have signed yet (0)
-                else if owner != signer.key() && signer_entry.signed != 0 {
+                else if owner != user.key() && signer_entry.signed != 0 {
                     return Err(ProgramError::InvalidInstructionData);
                 }
             }
@@ -80,7 +80,7 @@ pub fn process_create_transaction(accounts: &[AccountInfo], data: &[u8]) -> Prog
     let data_len = u64::from_le_bytes(transaction_header.data_len);
     let size = Transaction::size(num_accounts, num_signers, data_len);
     pinocchio_system::instructions::CreateAccount {
-        from: signer,
+        from: user,
         to: transaction,
         space: size as u64,
         lamports: Rent::get()?.minimum_balance(size),

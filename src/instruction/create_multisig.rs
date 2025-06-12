@@ -9,11 +9,11 @@ use pinocchio::{
 use crate::{constants::MULTISIG_SEED, state::Multisig};
 
 pub fn process_create_multisig(accounts: &[AccountInfo], data: &[u8]) -> ProgramResult {
-    let [signer, multisig, _system_program] = accounts else {
+    let [user, multisig, _system_program] = accounts else {
         return Err(ProgramError::NotEnoughAccountKeys);
     };
 
-    if !signer.is_signer() {
+    if !user.is_signer() {
         return Err(ProgramError::MissingRequiredSignature);
     }
 
@@ -38,8 +38,8 @@ pub fn process_create_multisig(accounts: &[AccountInfo], data: &[u8]) -> Program
         return Err(ProgramError::InvalidInstructionData);
     }
 
-    // Check if signer is in the list of owners.
-    if !owners.iter().any(|k| k.eq(signer.key())) {
+    // Check if user is in the list of owners.
+    if !owners.iter().any(|k| k.eq(user.key())) {
         return Err(ProgramError::InvalidInstructionData);
     }
 
@@ -47,7 +47,7 @@ pub fn process_create_multisig(accounts: &[AccountInfo], data: &[u8]) -> Program
     let num_owners = u64::from_le_bytes(multisig_header.num_owners);
     let size = Multisig::size(num_owners);
     pinocchio_system::instructions::CreateAccount {
-        from: signer,
+        from: user,
         to: multisig,
         space: size as u64,
         lamports: Rent::get()?.minimum_balance(size),
