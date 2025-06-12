@@ -31,5 +31,8 @@ fn process_instruction(
         MultisigInstruction::ApproveTransaction => {
             instruction::process_approve_transaction(accounts)
         }
+        MultisigInstruction::ExecuteTransaction => {
+            instruction::process_execute_transaction(accounts)
+        }
     }
 }
